@@ -16,8 +16,11 @@ GEM
       nokogiri
     narray (0.5.9.9)
     nokogiri (1.4.4)
-    perftools.rb (0.5.6)
+    rserve-client (0.2.5)
+    rserve-simpler (0.0.3)
+      rserve-client (~> 0.2.5)
     ruby-units (1.1.5)
+    yard (0.6.4)
 
 PLATFORMS
   ruby
@@ -25,5 +28,9 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   gsl
+  ms-core
   ms-msrun
-  perftools.rb
+  narray
+  rserve-client
+  rserve-simpler
+  yard
