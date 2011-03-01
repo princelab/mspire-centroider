@@ -3,6 +3,7 @@ require "rubygems" #for ruby 1.8.7
 require "bundler"
 Bundler.require(:default)
 require "lib/centroider"
+require "ms/msrun/plms1"
 include Centroider
 
 def find_peaks(scan)
@@ -22,13 +23,11 @@ def find_peaks(scan)
           prev_previous_intensity = scan[index - 2].intensity
           if on_downslope(prev_previous_intensity, previous_intensity)
             #We have found a local min
-            #peaks.last.local_minima << index - 1
             peaks.last.local_minima << scan[index - 1]
           end
         end
       end
     elsif in_peak
-      #peaks.last.end = index - 1
       in_peak = false
     end
   end
@@ -49,32 +48,36 @@ end
 Ms::Msrun.open("sample_files/test.mzXML") do |run|
   run.each(:ms_level => 1) do |scan|
     #save each run's centroids into an Narray of m/zs and amplitude
-    centroids_spectrum = Ms::Spectrum.new([NArray[], NArray[]])
     points = []
     scan.spectrum.mzs.each_with_index { |mz, index| points << Point.new(mz, scan.spectrum.intensities[index]) }
     points.sort!
-    peaks = find_peaks(points)
-    #peaks.each do |peak|
-      #if peak.multipeak?
-        ##some ugliness required to make the local_minima indicies match up with the x and y indicies
-        #centroids_from_multipeak(scan.spectrum.mzs[peak.start..peak.end],
-                                 #scan.spectrum.intensities[peak.start..peak.end],
-                                 #peak.local_minima.collect { |min| min - peak.start } ).each {
-          #|p|
-        #centroids[0] << p[0];
-        #centroids[1] << p[1];
-        #centroids[2] << scan.time
-        #}
-      #else
-        #res = centroid_from_single_peak(scan.spectrum.mzs[peak.start..peak.end],
-                                        #scan.spectrum.intensities[peak.start..peak.end])
-        #centroids[0] << res[0]
-        #centroids[1] << res[1]
-        #centroids[2] << scan.time
-        #centroids << centroid_from_single_peak(scan.spectrum.mzs[peak.start..peak.end],
-        #scan.spectrum.intensities[peak.start..peak.end]) + [run.time]
-      #end
-    #end
+    peaks = find_peaks points
+    mzs = []
+    intensities = []
+
+    peaks.each do |peak|
+      #@TODO: multipeak?
+      centroid = peak.centroid
+      if centroid[0].class == [].class
+        centroid.each do |cent|
+          mzs << cent[0]
+          intensities << cent[1]
+        end
+      else
+        mzs << centroid[0]
+        intensities << centroid[1]
+      end
+    end
+
+    #n_mzs = NArray[mzs]
+    #n_intensities = NArray[intensities]
+    centroids = [mzs, intensities]
+    puts centroids.inspect
+    #centroids = Ms::Spectrum.new [n_mzs, n_intensities]
+    #get the scan number and time, and put them into a new Plms1 to write out
+    out = Ms::Msrun::Plms1.new(scan.time, scan.num, [centroids])
+    out.write "out-#{scan.num}.plms1"
+    #TODO: write out centroids to a file
   end
   #r = Rserve::Simpler.new
   ##X is the range of all x values

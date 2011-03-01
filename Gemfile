@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
-gem "ms-msrun", :require => "ms/msrun"
 gem "ms-core", :require => "ms"
+gem "ms-msrun", :require => "ms/msrun"
 gem "gsl"
 gem "awesome_print", :require => "ap"
 gem "yard"
