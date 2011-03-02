@@ -46,11 +46,18 @@ end
 
 
 Ms::Msrun.open("sample_files/test.mzXML") do |run|
+  spectra_times = []
+  spectra_nums = []
+  spectra = []
+  spectra_points = []
   run.each(:ms_level => 1) do |scan|
     #save each run's centroids into an Narray of m/zs and amplitude
+    spectra_times << scan.time
+    spectra_nums << scan.num
     points = []
     scan.spectrum.mzs.each_with_index { |mz, index| points << Point.new(mz, scan.spectrum.intensities[index]) }
     points.sort!
+    spectra_points << points
     peaks = find_peaks points
     mzs = []
     intensities = []
@@ -71,25 +78,28 @@ Ms::Msrun.open("sample_files/test.mzXML") do |run|
 
     #n_mzs = NArray[mzs]
     #n_intensities = NArray[intensities]
-    centroids = [mzs, intensities]
-    puts centroids.inspect
-    #centroids = Ms::Spectrum.new [n_mzs, n_intensities]
+    spectra << [mzs, intensities]
+    #centroids = Ms::spectra.new [n_mzs, n_intensities]
     #get the scan number and time, and put them into a new Plms1 to write out
-    out = Ms::Msrun::Plms1.new(scan.time, scan.num, [centroids])
-    out.write "out-#{scan.num}.plms1"
-    #TODO: write out centroids to a file
-  end
-  #r = Rserve::Simpler.new
-  ##X is the range of all x values
-  #x_min = centroids[0].min
-  #x_max = centroids[0].max
-  #r.command "x <- seq(#{x_min}, #{x_max}, length.out=10000)"
-  #y_min = centroids[1].min
-  #y_max = centroids[1].max
-  #r.command "y <- seq(#{y_min}, #{y_max}, length.out=10000)"
-  #r.command "z <- #{centroids}"
+    #out = Ms::Msrun::Plms1.new(scan.time, scan.num, [centroids])
+    #out.write "out-#{scan.num}.plms1"
+    r = Rserve::Simpler.new
 
-  #r.converse do
-  #"persp(x, y, z, theta=45, phi=25, shade=.3)"
-  #end
+    centroids_to_graph = spectra[0]
+    points_to_graph = spectra_points[0]
+    x = points_to_graph.collect { |point| point.mz }
+    y = points_to_graph.collect { |point| point.intensity }
+
+    res = r.converse(xr: x, yr: y) do
+      "plot(x=xr, y=yr, type='p', col='red')"
+    end
+    #TODO: print out the lines of the centroids
+    #centroids_to_graph.each do |cent|
+      #r.converse(
+    #end
+    r.pause
+  end
+  out = Ms::Msrun::Plms1.new(spectra_times, spectra_nums, spectra)
+  out.write "out.plms1"
+
 end
