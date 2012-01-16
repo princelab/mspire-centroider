@@ -1,10 +1,16 @@
+require 'gsl'
+
 module Centroider
   class Peak
+    include Enumerable
     attr_accessor :local_minima, :points
-    def initialize(point)
+
+    def initialize(points=[])
       @local_minima = []
-      @points = [point]
+      @points = points
     end
+
+    alias_method :each, :points
 
     def multipeak?
       @local_minima.length > 0
@@ -14,6 +20,42 @@ module Centroider
       @points << data
     end
 
+    def push(*data)
+      @points.push(*data)
+    end
+
+    # returns an array of peaks so that each peak contains no local minima.
+    # If the peak has no local minima, it is returned [as the single element
+    #  in the array], rather than duplicated.
+    #
+    #      :share_with_neighbor   share the minima based on the intensity of 
+    #                             neighboring points.
+    def split(methd=:share_with_neighbor)
+      if self.multipeak?
+        new_peaks = [Peak.new]
+        lm_indices = @local_minima.map {|lm| @points.index(lm) }
+        prev_lm_i = -1 
+        lm_indices.each do |lm_i|
+          lm = @points[lm_i]
+          before = @points[lm_i-1].intensity.to_f
+          after = @points[lm_i+1].intensity.to_f
+          sum = before + after
+          # push onto the last peak all the peaks from right after the previous local min
+          # to just before this local min
+          new_peaks.last.push( *@points[(prev_lm_i+1)..(lm_i-1)] )
+          # push onto the last peak its portion of the local min
+          new_peaks.last << Point.new( lm.mz, lm.intensity * (before/sum) )
+          # create a new peak that contains its portion of the local min
+          new_peaks << Peak.new( [Point.new(lm.mz, lm.intensity * (after/sum))] )
+          prev_lm_i = lm_i
+        end
+        new_peaks.last.push( *@points[(prev_lm_i+1)...@points.size] )
+        new_peaks
+      else
+        [self]
+      end
+    end
+
     # Return the centroid as an array of [mz, intensity]
     #
     # @return [Array] the centroid in the form of [mz, intensity]
@@ -21,6 +63,13 @@ module Centroider
       multipeak? ? centroids_from_multipeak : centroid_from_single_peak
     end
 
+    def y
+      @points.map(&:intensity)
+    end
+
+    def x
+      @points.map(&:mz)
+    end
 
     # Calculate a centroid from this peak.
     #
@@ -63,6 +112,19 @@ module Centroider
     def centroids_from_multipeak(options={})
       #naive implementation - find each top 3 points of each max and pass it to centroid_from_single_peak
       centroids = []
+      _x = x
+      _y = y
+
+      bounds_by_index  = @local_minima.map {|lm| _x.index(lm.mz) }
+      bounds_by_index.unshift 0
+      bounds_by_index.push _x.size-1
+
+      puts "SELF: "
+      p self
+      p "BOUNDS: "
+      p bounds_by_index
+      abort 'here'
+
       @local_minima.each_with_index do |min, index|
         #if we are at the first peak, we need to take everything from the begining to the first peak
         if index == 0
@@ -92,17 +154,6 @@ module Centroider
     end
   end
 
-  def y
-    @points.collect do |point|
-      point.intensity
-    end
-  end
-
-  def x
-    @points.collect do |point|
-      point.mz
-    end
-  end
 
   #TODO: should Peak centroid itself?
 end
