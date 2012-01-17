@@ -16,10 +16,23 @@ describe Centroider do
     diff = 0.01
     loop do
       @mzs << mz
-      break if @mzs.size == intensities.size
+      break if @mzs.size == @intensities.size
       mz += diff
     end
     @mzs.map! {|mz| mz.round(2) }
+    @points = @mzs.zip(@intensities).map {|pair| Centroider::Point.new *pair }
   end
+
+  it 'finds peaks based on a series of points' do
+    # will find peaks, and some will be multipeak
+    peaks = Centroider.find_peaks(@points)
+    peaks.size.should == 4
+    peaks.map(&:multipeak?).should == [false, true, true, false]
+    peaks = Centroider.find_peaks(@points, :split => :neighbors)
+    peaks.size.should == 8
+    peaks.any?(&:multipeak?).should be_false
+    peaks.any?(&:multipeak?).should be_false
+  end
+
 end
 

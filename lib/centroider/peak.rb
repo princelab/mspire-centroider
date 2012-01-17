@@ -1,4 +1,10 @@
-require 'gsl'
+begin
+  require 'gsl'
+  $HAVE_GSL = true
+rescue LoadError
+  $HAVE_GSL = false
+end
+
 
 module Centroider
   class Peak
@@ -75,6 +81,7 @@ module Centroider
     #
     # @return [Array] a centroid in the form of [mz, intensity]
     def centroid_from_single_peak(x=self.x, y=self.y)
+      abort 'require gsl gem to create centroids' unless $HAVE_GSL
       #log of a gaussian is a parabola, sortof
       y_log = y.collect { |y_point| Math.log(y_point) }
       if x.length == 2
