@@ -12,6 +12,7 @@ Jeweler::Tasks.new do |gem|
   gem.description = %Q{centroids profile spectra (typically for mass spectrometry data). }
   gem.email = "jtprince@gmail.com"
   gem.authors = ["Jamison Dance, John T. Prince"]
+  gem.add_development_dependency "gsl", "~> 1"
   gem.add_development_dependency "rspec", "~> 2.6"
   gem.add_development_dependency "jeweler", "~> 1.5.2"
 end

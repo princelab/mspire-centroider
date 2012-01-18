@@ -78,7 +78,6 @@ module Centroider
     end
 
     # Calculate a centroid from this peak.
-    #
     # @return [Array] a centroid in the form of [mz, intensity]
     def centroid_from_single_peak(x=self.x, y=self.y)
       abort 'require gsl gem to create centroids' unless $HAVE_GSL
@@ -117,21 +116,9 @@ module Centroider
     #     peak picking algorithm
     # @return [Array] an array of centroid peaks in the form of [[mz, intensity] . . .]
     def centroids_from_multipeak(options={})
+      warn "I'M NOT SURE THIS WORKS PROPERLY...."
       #naive implementation - find each top 3 points of each max and pass it to centroid_from_single_peak
       centroids = []
-      _x = x
-      _y = y
-
-      bounds_by_index  = @local_minima.map {|lm| _x.index(lm.mz) }
-      bounds_by_index.unshift 0
-      bounds_by_index.push _x.size-1
-
-      puts "SELF: "
-      p self
-      p "BOUNDS: "
-      p bounds_by_index
-      abort 'here'
-
       @local_minima.each_with_index do |min, index|
         #if we are at the first peak, we need to take everything from the begining to the first peak
         if index == 0
