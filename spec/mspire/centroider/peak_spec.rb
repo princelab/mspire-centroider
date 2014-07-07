@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-require 'centroider/peak'
+require 'mspire/centroider/peak'
 
-describe Centroider::Peak do
+describe Mspire::Centroider::Peak do
 end
 

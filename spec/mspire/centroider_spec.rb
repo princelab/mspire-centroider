@@ -2,7 +2,7 @@ require 'spec_helper'
 
 require 'centroider'
 
-describe Centroider do
+describe Mspire::Centroider do
   before do
     simple = [ 0, 3, 8, 9, 7, 2, 0 ]
     multi_large1 = [ 0, 3, 8, 2, 9, 7, 1, 3, 0 ]
@@ -20,17 +20,17 @@ describe Centroider do
       mz += diff
     end
     @mzs.map! {|mz| mz.round(2) }
-    @points = @mzs.zip(@intensities).map {|pair| Centroider::Point.new *pair }
+    @points = @mzs.zip(@intensities).map {|pair| Mspire::Centroider::Point.new *pair }
   end
 
   it 'finds peaks based on a series of points' do
     # will find peaks, and some will be multipeak
-    peaks = Centroider.find_peaks(@points)
+    peaks = Mspire::Centroider.find_peaks(@points)
     peaks.size.should == 4
     p peaks.first
     p peaks.last
     peaks.map(&:multipeak?).should == [false, true, true, false]
-    peaks = Centroider.find_peaks(@points, :split => :neighbors)
+    peaks = Mspire::Centroider.find_peaks(@points, :split => :neighbors)
     peaks.size.should == 8
     p peaks[1,3].map(&:y)
     peaks.any?(&:multipeak?).should be_false
