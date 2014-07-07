@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'mspire/centroider/commandline'
+
+Mspire::Centroider::Commandline.run(__FILE__, ARGV)
