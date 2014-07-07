@@ -1,24 +1,29 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+require 'simplecov'
+SimpleCov.start
 
-require 'rubygems'
 require 'rspec'
+require 'stringio'
+require 'pry'
 
-TESTFILES = File.dirname(__FILE__) + '/testfiles'
-
-# Requires supporting files with custom matchers and macros, etc,
-# in ./support/ and its subdirectories.
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
-
-RSpec.configure do |config|
-  config.color_enabled = true
-  config.tty = true
-  #config.formatter = :documentation  # :progress, :html, :textmate
-  config.formatter = :progress # :progress, :html, :textmate
-end
-
-def benchmark(*args, &block)
-  if ENV['BENCHMARK']
-    Benchmark.bmbm(*args, &block)
+require 'rspec/core/formatters/progress_formatter'
+# doesn't say so much about pending guys
+class QuietPendingFormatter < RSpec::Core::Formatters::ProgressFormatter
+  def example_pending(example)
+    output.print pending_color('*')
   end
 end
+
+require 'rspec/core/formatters/documentation_formatter'
+class QuietPendingDocFormatter < RSpec::Core::Formatters::DocumentationFormatter
+  def example_pending(example)
+    output.puts pending_color( "<pending>: #{example.execution_result[:pending_message]}" )
+  end
+end
+
+RSpec.configure do |config|
+  config.treat_symbols_as_metadata_keys_with_true_values = true
+  config.formatter = QuietPendingDocFormatter
+  config.color = true
+end
+
+TESTFILES = File.dirname(__FILE__) + "/testfiles"
