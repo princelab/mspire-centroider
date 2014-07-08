@@ -1,0 +1,7 @@
+pkg
+test_files_large
+doc/output/*
+.*.swp
+playing_around_with
+coverage
+/.bundle

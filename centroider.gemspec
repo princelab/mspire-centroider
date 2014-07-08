@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
     ["rspec", "~> 2.14.1"], 
     ["rdoc", "~> 4.1.1"], 
     ["simplecov", "~> 0.8.2"],
+    ["gnuplot"],
     ["coveralls"],
   ].each do |args|
     spec.add_development_dependency(*args)

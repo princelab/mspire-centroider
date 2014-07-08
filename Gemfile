@@ -1,16 +1,8 @@
-source "http://rubygems.org"
+source 'https://rubygems.org'
 
-gem "ms-core", :require => "ms"
-gem "ms-msrun", :require => "ms/msrun"
-gem "gsl"
-gem "awesome_print", :require => "ap"
-gem "yard"
-gem "rserve-client"
-gem "rserve-simpler", :require => "rserve/simpler"
-gem "narray"
+# Specify your gem's dependencies in mspire.gemspec
+gemspec
 
-#group :performance do
-  #gem "perftools.rb", :require => "perftools"
-  #gem "bleak_house"
-  #gem "memprof"
-#end
+group :messing_around do
+  gem "pry"
+end
