@@ -1,3 +1,5 @@
+require 'matrix'
+
 module Mspire
   module Centroider
     class Peak
@@ -87,46 +89,66 @@ module Mspire
         ((mx.t * mx).inv * mx.t * my).transpose.to_a[0]
       end
 
+      # returns [mean, sigma, h]
+      def fit_gaussian(xs, ys)
+        ys_log = ys.map {|y_point| Math.log(y_point) }
+        (a, b, c) = regress(xs, ys_log, 2)
+
+        mu = -b / (2.0*c)
+        #mu = -b / (2*a)
+
+        sigma = Math.sqrt(-1 / (2 * c))
+        h = Math.exp(a - (b**2 / (4 * c)))
+
+        [mu, sigma, h]
+      end
+
+      # return the m/z and area under the curve
+      def centroid_gaussian(xs,ys)
+        # see Caruana Fast algorithm for the Resolution of Spectra. Anal Chem. 1986
+        
+        # TODO: implement weighted least squares so the highest values pull
+        # the largest weight in the fitting!
+        ys_log = ys.map {|y_point| Math.log(y_point) }
+        (a, b, c) = regress(xs, ys_log, 2)
+
+        mean = -b / (2.0*c)
+        area = Math.sqrt(-Math::PI / c) * Math.exp(a - (b**2 / (4*c)))
+
+        [mean, area]
+      end
+
+      def centroid_two_points(xs,ys)
+        # weighted average for m/z and trapezoid for intensity
+        sum_of_weights = ys.reduce(:+).to_f
+        fractional_values = ys.map {|v| v / sum_of_weights }
+        mz_weighted_center = xs.zip(fractional_values).map {|v| v.reduce(:*) }.reduce(:+)
+
+        sorted_y = ys.sort
+        b = xs[1] - xs[0]
+        area = (b * sorted_y.first) + (((sorted_y.last - sorted_y.first) * b) / 2.0)
+
+        [mz_weighted_center, area]
+      end
+
       # Calculate a centroid from this peak.
       # @return [Array] a centroid in the form of [mz, intensity]
       def centroid_from_single_peak
-        (x, y) = xpoints_ypoints
-        #log of a gaussian is a parabola, sortof
-        y_log = y.map { |y_point| Math.log(y_point) }
-        if x.length == 2
-          #TODO: Fix this so it works for 2-point things.
-          warn 'fix for 2 point things'
-          [0, 0, 0]
-        elsif x.length == 1
-          [x[0], y[0], 0.0]
+
+        # Also, note Guo's "A Simple Algorithm for Fitting a Gaussian
+        # Function" 2011. IEEE signal processing magazine.
+        # http://scipy-central.org/item/28/2/fitting-a-gaussian-to-noisy-data-points
+
+        # also consider the approach of just old school calc of stand-dev!
+        (xs, ys) = xpoints_ypoints
+        if xs.length == 1
+          [xs[0], 0]
+        elsif xs.length == 2
+          centroid_two_points(xs,ys)
         else
-          p x
-          p y
-          abort 'looking'
-          (a, b, c) = regress(x, y_log, 2)
-
-          # find the m/z on the parabola (will be the same)
-          # derivative of ax**2 + bx + c is 2ax + b, so set to zero
-          # 0 = 2ax + b -> -b = 2ax -> x = -b / 2a
-          mz_center_point = -b / (2*a)
-
-          h = Math.exp(a - (b**2 / (4 * c)))
-          mu = -b / (2 * c)
-          sigma = Math.sqrt(-1 / (2 * c))
-
-          integral = h * sigma * SQROOT_2PI
-
-
-          p [mz_center_point, integral]
-          abort 'here'
-          #sigma = (Math.sqrt(-1/(2*poly[0][0])))
-          #mu = (poly[0][1] * sigma**2)
-          #a = Math.exp(poly[0][2] + mu**2/(2 * sigma**2))
-          #[mu, a, sigma ** 2]
-          [mz_center_point, integral]
+          centroid_gaussian(xs,ys)
         end
       end
-
 
       # Calculate centroids for multiple convolved peaks.
       #
@@ -134,6 +156,12 @@ module Mspire
       #     peak picking algorithm
       # @return [Array] an array of centroid peaks in the form of [[mz, intensity] . . .]
       def centroids_from_multipeak(options={})
+
+        # for background on an iterative way to do this using the log
+        # transformed gaussian, see: Caruana, Searle,
+        # Heller, Shupack. Fast Algorithm for the Resolution of Sepctra. Anal
+        # Chem 1986.
+
         warn "I'M NOT SURE THIS WORKS PROPERLY...."
         #naive implementation - find each top 3 points of each max and pass it to centroid_from_single_peak
         centroids = []
